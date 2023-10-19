@@ -42,7 +42,6 @@ def home():
             query += ' FROM reservierungen r'
             query += ' WHERE (Datetime(\'now\', \'localtime\') BETWEEN r.zeitpunkt AND Datetime(r.zeitpunkt, \'+60 minutes\')) and r.storniert != True)'
             #return jsonify(query)
-            pass
 
         connection = sqlite3.connect('buchungssystem.sqlite')
         connection.row_factory = dict_factory
