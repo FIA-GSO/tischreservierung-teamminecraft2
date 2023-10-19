@@ -32,6 +32,11 @@ def home():
         if get_datetime_arg(request.args.get('free-at')) != None:
             # only return tables that are free until at least 1 hour from the given datetime
             # extend query to only match qualifying tables
+            query += ' WHERE tischnummer NOT IN('
+            query += ' SELECT DISTINCT r.tischnummer'
+            query += ' FROM reservierungen r'
+            query += ' WHERE (Datetime(\'now\', \'localtime\') BETWEEN r.zeitpunkt AND Datetime(r.zeitpunkt, \'+60 minutes\')) and r.storniert != True)'
+            #return jsonify(query)
             pass
 
         connection = sqlite3.connect('buchungssystem.sqlite')
