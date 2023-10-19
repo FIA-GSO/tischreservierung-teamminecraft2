@@ -34,7 +34,7 @@ def get_datetime_arg(arg_value) -> Optional[datetime]:
 def home():
     if request.method == 'GET':
         query = 'SELECT * FROM tische t'
-        if get_datetime_arg(request.args.get('free-at')) != None:
+        if get_datetime_arg(request.args.get('free-at')) is not None:
             # only return tables that are free until at least 1 hour from the given datetime
             # extend query to only match qualifying tables
             pass
