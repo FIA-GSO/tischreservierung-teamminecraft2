@@ -2,8 +2,7 @@ import json
 from datetime import datetime
 
 import flask
-from flask import jsonify  # übersetzt python-dicts in json
-from flask import request  # wird benötigt, um die HTTP-Parameter abzufragen
+from flask import request
 
 from sql import get_all_tables, get_free_tables
 
@@ -14,7 +13,7 @@ if __name__ == '__main__':
 
     @app.get('/api/v1/tables')
     def tables():
-        return jsonify(get_all_tables())
+        return json.dumps(get_all_tables())
 
 
     @app.get('/api/v1/free-tables')
@@ -31,7 +30,7 @@ if __name__ == '__main__':
         except ValueError:
             error = {'error': 'the date in the "?at=yy-mm-dd hh:mm" argument is not a valid datetime.', 'at': raw_date}
             return app.response_class(json.dumps(error), status=400)
-        return jsonify(get_free_tables(date))
+        return json.dumps(get_free_tables(date))
 
 
     app.run()
