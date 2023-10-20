@@ -1,18 +1,9 @@
------------------------------------------------------------------------------
--- Erzeugt eine SQLite Testdatenbank.
--- 
--- In Flask ist es üblich, diese Datei schema.sql zu nennen.
--- Man könnte sie auch create_Buchungssystem.sql nennen.
--- Siehe auch: https://flask.palletsprojects.com/en/2.3.x/tutorial/database/
---
------------------------------------------------------------------------------
-
 DROP TABLE IF EXISTS reservierungen;
 DROP TABLE IF EXISTS tische;
 
 CREATE TABLE tische(
     tischnummer              INTEGER NOT NULL UNIQUE
-,   anzahlPlaetze   INTEGER 
+,   anzahlPlaetze   INTEGER
 ,   PRIMARY KEY (tischnummer)
 );
 
