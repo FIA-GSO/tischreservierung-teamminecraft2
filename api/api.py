@@ -1,49 +1,23 @@
-import sqlite3
 from datetime import datetime
-from typing import Optional
 
 import flask
 from flask import jsonify  # übersetzt python-dicts in json
 from flask import request  # wird benötigt, um die HTTP-Parameter abzufragen
 
-app = flask.Flask(__name__)
-app.config["DEBUG"] = True  # Zeigt Fehlerinformationen im Browser, statt nur einer generischen Error-Message
+from sql import get_all_tables, get_free_tables
 
 
-def dict_factory(cursor: Cursor, row: List[Any]) -> Dict[str, Any]:
-    return dict(zip(cursor.description, row))
+if __name__ == '__main__':
+    app = flask.Flask(__name__)
+    app.config["DEBUG"] = True  # Zeigt Fehlerinformationen im Browser, statt nur einer generischen Error-Message
 
+    @app.get('/api/v1/table')
+    def home():
+        raw_date = request.args.get('free-at')
+        try:
+            date = datetime.fromisoformat(raw_date)
+            return jsonify(get_free_tables(date))
+        except (TypeError, ValueError):
+            return jsonify(get_all_tables())
 
-def get_bool_arg(arg_value) -> Optional[bool]:
-    if isinstance(arg_value, str) and arg_value.lower() in ['true', '1']:
-        return True
-    return False
-
-
-def get_datetime_arg(arg_value) -> Optional[datetime]:
-    try:
-        return datetime.fromisoformat(arg_value)
-    except (TypeError, ValueError):
-        return None
-
-
-@app.route('/api/v1/table', methods=['GET'])
-def home():
-    if request.method == 'GET':
-        query = 'SELECT * FROM tische t'
-        if get_datetime_arg(request.args.get('free-at')) is not None:
-            # only return tables that are free until at least 1 hour from the given datetime
-            # extend query to only match qualifying tables
-            query += ' WHERE tischnummer NOT IN('
-            query += ' SELECT DISTINCT r.tischnummer'
-            query += ' FROM reservierungen r'
-            query += ' WHERE (Datetime(\'now\', \'localtime\') BETWEEN r.zeitpunkt AND Datetime(r.zeitpunkt, \'+60 minutes\')) and r.storniert != True)'
-            #return jsonify(query)
-
-        connection = sqlite3.connect('buchungssystem.sqlite')
-        connection.row_factory = dict_factory
-        cursor = connection.cursor()
-        return jsonify(cursor.execute(query).fetchall())
-
-
-app.run()
+    app.run()
