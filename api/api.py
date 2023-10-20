@@ -10,11 +10,8 @@ app = flask.Flask(__name__)
 app.config["DEBUG"] = True  # Zeigt Fehlerinformationen im Browser, statt nur einer generischen Error-Message
 
 
-def dict_factory(cursor, row):
-    d = {}
-    for idx, col in enumerate(cursor.description):
-        d[col[0]] = row[idx]
-    return d
+def dict_factory(cursor: Cursor, row: List[Any]) -> Dict[str, Any]:
+    return dict(zip(cursor.description, row))
 
 
 def get_bool_arg(arg_value) -> Optional[bool]:
