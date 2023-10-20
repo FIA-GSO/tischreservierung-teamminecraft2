@@ -20,7 +20,7 @@ def _all_tables_statement() -> str:
 
 
 def get_free_tables(time: datetime):
-    return _cursor().executescript(_free_tables_statement()).fetchall()
+    return _cursor().execute(_free_tables_statement(), (time,)).fetchall()
 
 
 @functools.lru_cache
@@ -30,10 +30,5 @@ def _free_tables_statement() -> str:
 
 
 def _cursor() -> Cursor:
-    return _database().cursor()
-
-
-@functools.lru_cache
-def _database() -> Connection:
     connection = sqlite3.connect('buchungssystem.sqlite')
-    return connection
+    return connection.cursor()
