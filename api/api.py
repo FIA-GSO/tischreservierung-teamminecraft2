@@ -55,9 +55,14 @@ if __name__ == '__main__':
         date = get_request_date()
         if isinstance(date, Response):
             return date
+        if date.minute != 30:
+            error = {'error': 'tables can only be reserved every hour at minute 30',
+                     'at': date.strftime('%Y-%m-%d %H:%M'),
+                     'min': date.minute}
+            return json_error(error)
         possible_choices = get_free_tables(date)
         if not possible_choices:
-            error = {'error': 'no free tables at requested time', 'at': date}
+            error = {'error': 'no free tables at requested time', 'at': date.strftime('%Y-%m-%d %H:%M')}
             return json_error(error)
         table = random.choice(possible_choices)
         # Todo reserve in database
