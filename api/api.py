@@ -9,7 +9,7 @@ from sql import get_all_tables, get_free_tables
 
 if __name__ == '__main__':
     app = flask.Flask(__name__)
-    app.config["DEBUG"] = True  # Zeigt Fehlerinformationen im Browser, statt nur einer generischen Error-Message
+    app.config["DEBUG"] = True
 
 
     @app.get('/api/v1/tables')
