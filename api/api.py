@@ -17,7 +17,7 @@ def json_response(obj: Any, status=200) -> Response:
     return Response(json.dumps(obj), status)
 
 
-def get_request_date() -> Union[Response, datetime]:
+def get_request_date_or_error() -> Union[Response, datetime]:
     raw_date = request.args.get('at')
     if raw_date is None:
         error = {'error': 'request argument "?at=yy-mm-dd hh:mm" is not specified'}
@@ -44,7 +44,7 @@ if __name__ == '__main__':
 
     @app.get('/api/v1/free-tables')
     def free_tables():
-        date = get_request_date()
+        date = get_request_date_or_error()
         if isinstance(date, Response):
             return date
         return json.dumps(get_free_tables(date))
@@ -52,18 +52,17 @@ if __name__ == '__main__':
 
     @app.post('/api/v1/table/reserve')
     def reserve_table():
-        date = get_request_date()
-        if isinstance(date, Response):
+        date = get_request_date_or_error()
+        if not isinstance(date, datetime):
             return date
         if date.minute != 30:
-            error = {'error': 'tables can only be reserved every hour at minute 30',
-                     'at': date.strftime('%Y-%m-%d %H:%M'),
-                     'min': date.minute}
-            return json_error(error)
+            return json_error(
+                {'error': 'tables can only be reserved every hour at minute 30',
+                 'at': date.strftime('%Y-%m-%d %H:%M'),
+                 'min': date.minute})
         possible_choices = get_free_tables(date)
         if not possible_choices:
-            error = {'error': 'no free tables at requested time', 'at': date.strftime('%Y-%m-%d %H:%M')}
-            return json_error(error)
+            return json_error({'error': 'no free tables at requested time', 'at': date.strftime('%Y-%m-%d %H:%M')})
         table = random.choice(possible_choices)
         # Todo reserve in database
         return json.dumps(table)
