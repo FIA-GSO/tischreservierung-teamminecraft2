@@ -1,5 +1,9 @@
-# TeamMinecraft2 Database
+# IDEs
+/.idea/
+/.vscode/
+/.vs/
 
+# TeamMinecraft2 Database
 *.sqlite
 
 # Byte-compiled / optimized / DLL files
