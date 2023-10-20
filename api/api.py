@@ -26,7 +26,7 @@ def get_request_date_or_error() -> Union[Response, datetime]:
         error = {'error': 'request argument "?at=yy-mm-dd hh:mm" must be a str.', 'at': raw_date}
         return json_response(error, status=400)
     try:
-        return datetime.fromisoformat(raw_date.strip("\""))
+        return datetime.strptime(raw_date.strip("\""), '%Y-%m-%d %H:%M')
     except ValueError:
         error = {'error': 'the date in the "?at=yy-mm-dd hh:mm" argument is not a valid datetime.', 'at': raw_date}
         return json_response(error, status=400)
