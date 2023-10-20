@@ -20,7 +20,7 @@ def _all_tables_statement() -> str:
 
 
 def get_free_tables(time: datetime):
-    return _cursor().execute(_free_tables_statement()).fetchall()
+    return _cursor().executescript(_free_tables_statement()).fetchall()
 
 
 @functools.lru_cache
