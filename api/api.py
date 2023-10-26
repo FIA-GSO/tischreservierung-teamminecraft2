@@ -18,9 +18,11 @@ def json_response(obj: Any, status=200) -> Response:
 
 
 def get_request_date_or_error() -> Union[Response, datetime]:
+    if 'now' in request.args:
+        return datetime.now().replace(minute=30)
     raw_date = request.args.get('at')
     if raw_date is None:
-        error = {'error': 'request argument "?at=yy-mm-dd hh:mm" is not specified'}
+        error = {'error': 'request argument "?at=yy-mm-dd hh:mm" or "?now" is not specified'}
         return json_error(error)
     if not isinstance(raw_date, str):
         error = {'error': 'request argument "?at=yy-mm-dd hh:mm" must be a str.', 'at': raw_date}
