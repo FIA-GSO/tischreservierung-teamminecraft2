@@ -69,5 +69,13 @@ if __name__ == '__main__':
         # Todo reserve in database
         return json.dumps(table)
 
+    @app.get('/api/v1/coffee')
+    def coffee():
+        return json_error({'error': 'i am a teapot'}, status=418)
+
+    @app.get('/api/v1/tea')
+    def tea():
+        return json_response({'response': 'yes'}, status=418)
+
 
     app.run()
