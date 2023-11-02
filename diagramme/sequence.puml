@@ -1,31 +1,22 @@
 @startuml
 actor Kunde
 actor Buchungssystem
-actor Server
 database Datenbank
 
 Kunde -> Buchungssystem: Tische anzeigen für gewünschten Termin
 activate Buchungssystem
 Buchungssystem --> Kunde: Liste der verfügbaren Tische
 Kunde -> Buchungssystem: Tische reservieren für gewünschten Termin
-Buchungssystem -> Server: Anfrage an Server zur Reservierung
-activate Server
-Server -> Datenbank: Überprüfe Tischverfügbarkeit
+Buchungssystem -> Datenbank: Überprüfe Tischverfügbarkeit
 activate Datenbank
-Datenbank --> Server: Tischverfügbarkeit bestätigt
+Datenbank --> Buchungssystem: Tischverfügbarkeit bestätigt
 deactivate Datenbank
-Server --> Buchungssystem: Reservierung bestätigen
-deactivate Server
 Buchungssystem --> Kunde: Bestätigung der Reservierung
 Kunde -> Buchungssystem: Reservierung ggf. stornieren
-Buchungssystem -> Server: Anfrage an Server zur Stornierung
-activate Server
-Server -> Datenbank: Storniere Reservierung
+Buchungssystem -> Datenbank: Storniere Reservierung
 activate Datenbank
-Datenbank --> Server: Stornierung bestätigt
+Datenbank --> Buchungssystem: Stornierung bestätigt
 deactivate Datenbank
-Server --> Buchungssystem: Stornierung bestätigen
-deactivate Server
 Buchungssystem --> Kunde: Bestätigung der Stornierung
 Kunde -> Buchungssystem: Logout
 
