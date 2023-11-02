@@ -1,0 +1,25 @@
+@startuml
+actor Kunde
+actor Buchungssystem
+actor Server
+
+Kunde -> Buchungssystem: Tische anzeigen für gewünschten Termin
+activate Buchungssystem
+Buchungssystem --> Kunde: Liste der verfügbaren Tische
+Kunde -> Buchungssystem: Tische reservieren für gewünschten Termin
+Buchungssystem --> Server: Anfrage an Server zur Reservierung
+activate Server
+Server --> Buchungssystem: Reservierung bestätigen
+deactivate Server
+Buchungssystem --> Kunde: Bestätigung der Reservierung
+Kunde -> Buchungssystem: Reservierung ggf. stornieren
+Buchungssystem --> Server: Anfrage an Server zur Stornierung
+activate Server
+Server --> Buchungssystem: Stornierung bestätigen
+deactivate Server
+Buchungssystem --> Kunde: Bestätigung der Stornierung
+Kunde -> Buchungssystem: Logout
+
+deactivate Buchungssystem
+
+@enduml
