@@ -17,10 +17,10 @@ def json_response(obj: Any, status=200) -> Response:
     return Response(json.dumps(obj), status)
 
 
-def get_request_date_or_error() -> Union[Response, datetime]:
-    if 'now' in request.args:
+def get_request_date_or_error(data: dict) -> Union[Response, datetime]:
+    if 'now' in data:
         return datetime.now().replace(minute=30)
-    raw_date = request.args.get('at')
+    raw_date = data.get('at')
     if raw_date is None:
         error = {'error': 'request argument "?at=yy-mm-dd hh:mm" or "?now" is not specified'}
         return json_error(error)
@@ -46,7 +46,7 @@ if __name__ == '__main__':
 
     @app.get('/api/v1/free-tables')
     def free_tables():
-        date = get_request_date_or_error()
+        date = get_request_date_or_error(request.args)
         if isinstance(date, Response):
             return date
         return json.dumps(get_free_tables(date))
@@ -54,7 +54,8 @@ if __name__ == '__main__':
 
     @app.post('/api/v1/table/reserve')
     def reserve_table():
-        date = get_request_date_or_error()
+        print(request.json)
+        date = get_request_date_or_error(request.json)
         if not isinstance(date, datetime):
             return date
         if date.minute != 30:
@@ -62,10 +63,17 @@ if __name__ == '__main__':
                 {'error': 'tables can only be reserved every hour at minute 30',
                  'at': date.strftime('%Y-%m-%d %H:%M'),
                  'min': date.minute})
-        possible_choices = get_free_tables(date)
-        if not possible_choices:
+        persons = request.json.get('persons')
+        if persons is None:
+            return json_error({'error': 'persons not provided'})
+        if not isinstance(persons, int):
+            return json_error({'error': 'persons has to be an integer'})
+        all_free_tables = get_free_tables(date)
+        best_choices = [table for table in all_free_tables if table[1] == persons]
+        possible_choices = [table for table in all_free_tables if table[1] >= persons]
+        if not best_choices and not possible_choices:
             return json_error({'error': 'no free tables at requested time', 'at': date.strftime('%Y-%m-%d %H:%M')})
-        table = random.choice(possible_choices)
+        table = random.choice(best_choices or possible_choices)
         # Todo reserve in database
         return json.dumps(table)
 
