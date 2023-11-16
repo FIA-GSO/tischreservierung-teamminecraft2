@@ -1,7 +1,7 @@
 import json
 import random
 from datetime import datetime
-from typing import Union, Any, Tuple
+from typing import Union, Tuple
 
 import flask
 from flask import request, Response
@@ -52,8 +52,8 @@ if __name__ == '__main__':
             return date
         if date.minute != 30:
             error = {'error': 'tables can only be reserved every hour at minute 30',
-                 'at': date.strftime('%Y-%m-%d %H:%M'),
-                 'min': date.minute}
+                     'at': date.strftime('%Y-%m-%d %H:%M'),
+                     'min': date.minute}
             return json.dumps(error), 400
         persons = request.json.get('persons')
         if persons is None:
@@ -71,10 +71,12 @@ if __name__ == '__main__':
         # Todo reserve in database
         return json.dumps(table)
 
+
     @app.get('/api/v1/coffee')
     def coffee():
         error = {'error': 'i am a teapot'}
         return json.dumps(error), 418
+
 
     @app.get('/api/v1/tea')
     def tea():
