@@ -46,7 +46,6 @@ if __name__ == '__main__':
 
     @app.post('/api/v1/table/reserve')
     def reserve_table():
-        print(request.json)
         date = get_request_date_or_error(request.json)
         if not isinstance(date, datetime):
             return date
