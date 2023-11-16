@@ -11,6 +11,8 @@ from sql import get_all_tables, get_free_tables, insert_reservation
 TABLE_ID: int = 0
 TABLE_PERSONS: int = 1
 
+DATE_FORMAT: str = '%Y-%m-%d %H:%M'
+
 
 def get_request_date_or_error(data: dict) -> Union[Tuple[str, int], datetime]:
     if 'now' in data:
@@ -23,7 +25,7 @@ def get_request_date_or_error(data: dict) -> Union[Tuple[str, int], datetime]:
         error = {'error': 'request argument "?at=yy-mm-dd hh:mm" must be a str.', 'at': raw_date}
         return json.dumps(error), 400
     try:
-        return datetime.strptime(raw_date.strip("\""), '%Y-%m-%d %H:%M')
+        return datetime.strptime(raw_date.strip("\""), DATE_FORMAT)
     except ValueError:
         error = {'error': 'the date in the "?at=yy-mm-dd hh:mm" argument is not a valid datetime.', 'at': raw_date}
         return json.dumps(error), 400
@@ -56,9 +58,13 @@ if __name__ == '__main__':
         date = get_request_date_or_error(request.json)
         if not isinstance(date, datetime):
             return date
+        if date < datetime.now():
+            error = {'error': 'date is in the past',
+                     'at': date.strftime(DATE_FORMAT)}
+            return json.dumps(error), 400
         if date.minute != 30:
             error = {'error': 'tables can only be reserved every hour at minute 30',
-                     'at': date.strftime('%Y-%m-%d %H:%M'),
+                     'at': date.strftime(DATE_FORMAT),
                      'min': date.minute}
             return json.dumps(error), 400
         persons = request.json.get('persons')
@@ -72,7 +78,7 @@ if __name__ == '__main__':
         possible_choices = (table for table in get_free_tables(date) if table[TABLE_PERSONS] >= persons)
         possible_choices_sorted = sorted(possible_choices, key=lambda table: table[TABLE_PERSONS])
         if not possible_choices_sorted:
-            error = {'error': 'no free tables at requested time', 'at': date.strftime('%Y-%m-%d %H:%M')}
+            error = {'error': 'no free tables at requested time', 'at': date.strftime(DATE_FORMAT)}
             return json.dumps(error), 404
         table = possible_choices_sorted[0]
         pin = generate_pin()
@@ -80,7 +86,7 @@ if __name__ == '__main__':
         result = {'table_id': table[TABLE_ID],
                   'table_persons': table[TABLE_PERSONS],
                   'requested_persons': persons,
-                  'date': date.strftime('%Y-%m-%d %H:%M'),
+                  'date': date.strftime(DATE_FORMAT),
                   'pin': pin}
         return json.dumps(result), 200
 
