@@ -1,7 +1,7 @@
 import json
 import random
 from datetime import datetime
-from typing import Union, Any
+from typing import Union, Any, Tuple
 
 import flask
 from flask import request, Response
@@ -9,29 +9,21 @@ from flask import request, Response
 from sql import get_all_tables, get_free_tables
 
 
-def json_error(obj: Any, status=400) -> Response:
-    return json_response(obj, status)
-
-
-def json_response(obj: Any, status=200) -> Response:
-    return Response(json.dumps(obj), status)
-
-
-def get_request_date_or_error(data: dict) -> Union[Response, datetime]:
+def get_request_date_or_error(data: dict) -> Union[Tuple[str, int], datetime]:
     if 'now' in data:
         return datetime.now().replace(minute=30)
     raw_date = data.get('at')
     if raw_date is None:
         error = {'error': 'request argument "?at=yy-mm-dd hh:mm" or "?now" is not specified'}
-        return json_error(error)
+        return json.dumps(error), 400
     if not isinstance(raw_date, str):
         error = {'error': 'request argument "?at=yy-mm-dd hh:mm" must be a str.', 'at': raw_date}
-        return json_error(error)
+        return json.dumps(error), 400
     try:
         return datetime.strptime(raw_date.strip("\""), '%Y-%m-%d %H:%M')
     except ValueError:
         error = {'error': 'the date in the "?at=yy-mm-dd hh:mm" argument is not a valid datetime.', 'at': raw_date}
-        return json_error(error)
+        return json.dumps(error), 400
 
 
 if __name__ == '__main__':
@@ -59,21 +51,23 @@ if __name__ == '__main__':
         if not isinstance(date, datetime):
             return date
         if date.minute != 30:
-            return json_error(
-                {'error': 'tables can only be reserved every hour at minute 30',
+            error = {'error': 'tables can only be reserved every hour at minute 30',
                  'at': date.strftime('%Y-%m-%d %H:%M'),
-                 'min': date.minute})
+                 'min': date.minute}
+            return json.dumps(error), 400
         persons = request.json.get('persons')
         if persons is None:
-            return json_error({'error': 'persons not provided'})
+            error = {'error': 'persons not provided'}
+            return json.dumps(error), 400
         if not isinstance(persons, int):
-            return json_error({'error': 'persons has to be an integer'})
-        all_free_tables = get_free_tables(date)
-        best_choices = [table for table in all_free_tables if table[1] == persons]
-        possible_choices = [table for table in all_free_tables if table[1] >= persons]
-        if not best_choices and not possible_choices:
-            return json_error({'error': 'no free tables at requested time', 'at': date.strftime('%Y-%m-%d %H:%M')})
-        table = random.choice(best_choices or possible_choices)
+            error = {'error': 'persons has to be an integer'}
+            return json.dumps(error), 400
+        possible_choices = (table for table in get_free_tables(date) if table[0] >= persons)
+        possible_choices_sorted = sorted(possible_choices, key=lambda table: table[1])
+        if not possible_choices_sorted:
+            error = {'error': 'no free tables at requested time', 'at': date.strftime('%Y-%m-%d %H:%M')}
+            return json.dumps(error), 400
+        table = random.choice(possible_choices_sorted)
         # Todo reserve in database
         return json.dumps(table)
 
