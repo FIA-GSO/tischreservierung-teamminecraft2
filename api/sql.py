@@ -1,8 +1,8 @@
 import sqlite3
-from functools import lru_cache
 from datetime import datetime
+from functools import lru_cache
 from pathlib import Path
-from sqlite3 import Cursor, Connection
+from sqlite3 import Cursor
 from typing import List, Any, Dict
 
 
@@ -27,6 +27,7 @@ def _sql_script(name: str) -> str:
 
 def _sql_path() -> Path:
     return Path(__file__).parent.parent / 'sql'
+
 
 def _cursor() -> Cursor:
     connection = sqlite3.connect('buchungssystem.sqlite')
