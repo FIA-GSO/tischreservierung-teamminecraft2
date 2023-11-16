@@ -18,6 +18,11 @@ def get_free_tables(time: datetime):
     return _cursor().execute(_sql_script('free_tables.sql'), (time,)).fetchall()
 
 
+def insert_reservation(time: datetime, table: int, pin: int):
+    result = _cursor().execute(_sql_script('insert_reservation.sql'), (time, table, pin)).fetchone()
+    print(result)
+
+
 @lru_cache()
 def _sql_script(name: str) -> str:
     path = _sql_path() / name
@@ -25,10 +30,14 @@ def _sql_script(name: str) -> str:
         return file.read()
 
 
+def _project_dir() -> Path:
+    return Path(__file__).parent.parent
+
+
 def _sql_path() -> Path:
-    return Path(__file__).parent.parent / 'sql'
+    return _project_dir() / 'sql'
 
 
 def _cursor() -> Cursor:
-    connection = sqlite3.connect('buchungssystem.sqlite')
+    connection = sqlite3.connect(_project_dir() / 'buchungssystem.sqlite')
     return connection.cursor()

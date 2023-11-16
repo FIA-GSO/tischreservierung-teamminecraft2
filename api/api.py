@@ -6,7 +6,10 @@ from typing import Union, Tuple
 import flask
 from flask import request, Response
 
-from sql import get_all_tables, get_free_tables
+from sql import get_all_tables, get_free_tables, insert_reservation
+
+TABLE_ID: int = 0
+TABLE_PERSONS: int = 1
 
 
 def get_request_date_or_error(data: dict) -> Union[Tuple[str, int], datetime]:
@@ -24,6 +27,10 @@ def get_request_date_or_error(data: dict) -> Union[Tuple[str, int], datetime]:
     except ValueError:
         error = {'error': 'the date in the "?at=yy-mm-dd hh:mm" argument is not a valid datetime.', 'at': raw_date}
         return json.dumps(error), 400
+
+
+def generate_pin() -> int:
+    return random.randint(1000, 9999)
 
 
 if __name__ == '__main__':
@@ -61,14 +68,21 @@ if __name__ == '__main__':
         if not isinstance(persons, int):
             error = {'error': 'persons has to be an integer'}
             return json.dumps(error), 400
-        possible_choices = (table for table in get_free_tables(date) if table[0] >= persons)
-        possible_choices_sorted = sorted(possible_choices, key=lambda table: table[1])
+        persons = int(persons)
+        possible_choices = (table for table in get_free_tables(date) if table[TABLE_PERSONS] >= persons)
+        possible_choices_sorted = sorted(possible_choices, key=lambda table: table[TABLE_PERSONS])
         if not possible_choices_sorted:
             error = {'error': 'no free tables at requested time', 'at': date.strftime('%Y-%m-%d %H:%M')}
-            return json.dumps(error), 400
-        table = random.choice(possible_choices_sorted)
-        # Todo reserve in database
-        return json.dumps(table)
+            return json.dumps(error), 404
+        table = possible_choices_sorted[0]
+        pin = generate_pin()
+        insert_reservation(date, table[TABLE_ID], pin)
+        result = {'table_id': table[TABLE_ID],
+                  'table_persons': table[TABLE_PERSONS],
+                  'requested_persons': persons,
+                  'date': date.strftime('%Y-%m-%d %H:%M'),
+                  'pin': pin}
+        return json.dumps(result), 200
 
 
     @app.get('/api/v1/coffee')
