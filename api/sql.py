@@ -19,8 +19,9 @@ def get_free_tables(time: datetime):
 
 
 def insert_reservation(time: datetime, table: int, pin: int):
-    result = _cursor().execute(_sql_script('insert_reservation.sql'), (time, table, pin)).fetchone()
-    print(result)
+    connection = _connection()
+    connection.cursor().execute(_sql_script('insert_reservation.sql'), (time, table, pin))
+    connection.commit()
 
 
 @lru_cache()
@@ -39,5 +40,8 @@ def _sql_path() -> Path:
 
 
 def _cursor() -> Cursor:
-    connection = sqlite3.connect(_project_dir() / 'buchungssystem.sqlite')
-    return connection.cursor()
+    return _connection().cursor()
+
+
+def _connection():
+    return sqlite3.connect(_project_dir() / 'buchungssystem.sqlite')
