@@ -1,10 +1,9 @@
-import json
 import random
 from datetime import datetime
 from typing import Union, Tuple
 
 import flask
-from flask import request, Response
+from flask import request, Response, jsonify
 
 from sql import get_all_tables, get_free_tables, insert_reservation
 
@@ -20,15 +19,15 @@ def get_request_date_or_error(data: dict) -> Union[Tuple[str, int], datetime]:
     raw_date = data.get('at')
     if raw_date is None:
         error = {'error': 'request argument "?at=yy-mm-dd hh:mm" or "?now" is not specified'}
-        return json.dumps(error), 400
+        return jsonify(error), 400
     if not isinstance(raw_date, str):
         error = {'error': 'request argument "?at=yy-mm-dd hh:mm" must be a str.', 'at': raw_date}
-        return json.dumps(error), 400
+        return jsonify(error), 400
     try:
         return datetime.strptime(raw_date.strip("\""), DATE_FORMAT)
     except ValueError:
         error = {'error': 'the date in the "?at=yy-mm-dd hh:mm" argument is not a valid datetime.', 'at': raw_date}
-        return json.dumps(error), 400
+        return jsonify(error), 400
 
 
 def generate_pin() -> int:
@@ -42,7 +41,7 @@ if __name__ == '__main__':
 
     @app.get('/api/v1/tables')
     def tables():
-        return json.dumps(get_all_tables())
+        return jsonify(get_all_tables())
 
 
     @app.get('/api/v1/free-tables')
@@ -50,7 +49,7 @@ if __name__ == '__main__':
         date = get_request_date_or_error(request.args)
         if isinstance(date, Response):
             return date
-        return json.dumps(get_free_tables(date))
+        return jsonify(get_free_tables(date))
 
 
     @app.post('/api/v1/table/reserve')
@@ -61,25 +60,25 @@ if __name__ == '__main__':
         if date < datetime.now():
             error = {'error': 'date is in the past',
                      'at': date.strftime(DATE_FORMAT)}
-            return json.dumps(error), 400
+            return jsonify(error), 400
         if date.minute != 30:
             error = {'error': 'tables can only be reserved every hour at minute 30',
                      'at': date.strftime(DATE_FORMAT),
                      'min': date.minute}
-            return json.dumps(error), 400
+            return jsonify(error), 400
         persons = request.json.get('persons')
         if persons is None:
             error = {'error': 'persons not provided'}
-            return json.dumps(error), 400
+            return jsonify(error), 400
         if not isinstance(persons, int):
             error = {'error': 'persons has to be an integer'}
-            return json.dumps(error), 400
+            return jsonify(error), 400
         persons = int(persons)
         possible_choices = (table for table in get_free_tables(date) if table[TABLE_PERSONS] >= persons)
         possible_choices_sorted = sorted(possible_choices, key=lambda table: table[TABLE_PERSONS])
         if not possible_choices_sorted:
             error = {'error': 'no free tables at requested time', 'at': date.strftime(DATE_FORMAT)}
-            return json.dumps(error), 404
+            return jsonify(error), 404
         table = possible_choices_sorted[0]
         pin = generate_pin()
         insert_reservation(date, table[TABLE_ID], pin)
@@ -88,19 +87,19 @@ if __name__ == '__main__':
                   'requested_persons': persons,
                   'date': date.strftime(DATE_FORMAT),
                   'pin': pin}
-        return json.dumps(result), 200
+        return jsonify(result), 200
 
 
     @app.get('/api/v1/coffee')
     def coffee():
         error = {'error': 'i am a teapot'}
-        return json.dumps(error), 418
+        return jsonify(error), 418
 
 
     @app.get('/api/v1/tea')
     def tea():
         error = {'response': 'yes'}
-        return json.dumps(error), 418
+        return jsonify(error), 418
 
 
     app.run()
