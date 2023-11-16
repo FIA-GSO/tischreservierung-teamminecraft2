@@ -13,7 +13,7 @@ TABLE_PERSONS: int = 1
 DATE_FORMAT: str = '%Y-%m-%d %H:%M'
 
 
-def get_request_date_or_error(data: dict) -> Union[Tuple[str, int], datetime]:
+def get_request_date_or_error(data: dict) -> Union[Tuple[Response, int], datetime]:
     if 'now' in data:
         return datetime.now().replace(minute=30)
     raw_date = data.get('at')
