@@ -18,15 +18,15 @@ def get_request_date_or_error(data: dict) -> Union[Tuple[Response, int], datetim
         return datetime.now().replace(minute=30)
     raw_date = data.get('at')
     if raw_date is None:
-        error = {'error': 'request argument "?at=yy-mm-dd hh:mm" or "?now" is not specified'}
+        error = {'error': 'request argument "at=yyyy-mm-dd hh:mm" or "now" is not specified'}
         return jsonify(error), 400
     if not isinstance(raw_date, str):
-        error = {'error': 'request argument "?at=yy-mm-dd hh:mm" must be a str.', 'at': raw_date}
+        error = {'error': 'request argument "at=yyyy-mm-dd hh:mm" must be a str.', 'at': raw_date}
         return jsonify(error), 400
     try:
         return datetime.strptime(raw_date.strip("\""), DATE_FORMAT)
     except ValueError:
-        error = {'error': 'the date in the "?at=yy-mm-dd hh:mm" argument is not a valid datetime.', 'at': raw_date}
+        error = {'error': 'the date in the "at=yyyy-mm-dd hh:mm" argument is not a valid datetime.', 'at': raw_date}
         return jsonify(error), 400
 
 
