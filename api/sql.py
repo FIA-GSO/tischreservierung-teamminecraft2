@@ -6,22 +6,19 @@ from sqlite3 import Cursor
 from typing import List, Any, Dict
 
 
-def dict_factory(cursor: Cursor, row: List[Any]) -> Dict[str, Any]:
-    return dict(zip(cursor.description, row))
-
-
 def get_all_tables():
-    return _cursor().execute(_sql_script('all_tables.sql')).fetchall()
+    with DbConnection() as cursor:
+        return cursor.execute(_sql_script('all_tables.sql')).fetchall()
 
 
 def get_free_tables(time: datetime):
-    return _cursor().execute(_sql_script('free_tables.sql'), (time,)).fetchall()
+    with DbConnection() as cursor:
+        return cursor.execute(_sql_script('free_tables.sql'), (time,)).fetchall()
 
 
 def insert_reservation(time: datetime, table: int, pin: int):
-    connection = _connection()
-    connection.cursor().execute(_sql_script('insert_reservation.sql'), (time, table, pin))
-    connection.commit()
+    with DbConnection(commit=True) as cursor:
+        cursor.execute(_sql_script('insert_reservation.sql'), (time, table, pin))
 
 
 @lru_cache()
@@ -39,9 +36,26 @@ def _sql_path() -> Path:
     return _project_dir() / 'sql'
 
 
-def _cursor() -> Cursor:
-    return _connection().cursor()
+class DbConnection:
 
+    ROW_NAME_MAPPING: Dict[str, str] = {
+        'tischnummer': 'table_id',
+        'anzahlPlaetze': 'persons'
+    }
 
-def _connection():
-    return sqlite3.connect(_project_dir() / 'buchungssystem.sqlite')
+    def __init__(self, commit: bool = False):
+        self.connection = sqlite3.connect(_project_dir() / 'buchungssystem.sqlite')
+        self.connection.row_factory = self._dict_factory
+        self.commit = commit
+
+    def __enter__(self):
+        return self.connection.cursor()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        no_error_occurred = exc_type is None and exc_val is None and exc_tb is None
+        if self.commit and no_error_occurred:
+            self.connection.commit()
+        self.connection.close()
+
+    def _dict_factory(self, cursor: Cursor, row: List[Any]) -> Dict[str, Any]:
+        return dict(zip((self.ROW_NAME_MAPPING[description[0]] for description in cursor.description), row))
