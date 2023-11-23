@@ -11,21 +11,33 @@ DATE_FORMAT: str = '%Y-%m-%d %H:%M'
 
 
 def get_request_date_or_error(data: dict) -> Union[Tuple[Response, int], datetime]:
-    if 'now' in data:
-        now = datetime.now()
-        return now.replace(minute=(round(now.minute / 30) * 30) % 60)
-    raw_date = data.get('at')
+    raw_date = data.get('free-at')
     if raw_date is None:
-        error = {'error': 'request argument "at=yyyy-mm-dd hh:mm" or "now" is not specified'}
+        error = {'error': 'request argument "free-at=yyyy-mm-dd hh:mm" or "free-at=now" is not specified'}
         return jsonify(error), 400
     if not isinstance(raw_date, str):
-        error = {'error': 'request argument "at=yyyy-mm-dd hh:mm" must be a str.', 'at': raw_date}
+        error = {'error': 'request argument "free-at=yyyy-mm-dd hh:mm" or "free-at=now" must be a str.',
+                 'free-at': raw_date}
         return jsonify(error), 400
+    if raw_date == 'now':
+        now = datetime.now()
+        return now.replace(minute=(round(now.minute / 30) * 30) % 60)
+    iso_date = parse_iso_date(raw_date)
+    if iso_date is not None:
+        return iso_date
     try:
         return datetime.strptime(raw_date.strip("\""), DATE_FORMAT)
     except ValueError:
-        error = {'error': 'the date in the "at=yyyy-mm-dd hh:mm" argument is not a valid datetime.', 'at': raw_date}
+        error = {'error': 'the date in the "free-at=yyyy-mm-dd hh:mm" argument is not a valid datetime.',
+                 'free-at': raw_date}
         return jsonify(error), 400
+
+
+def parse_iso_date(value: str) -> Union[None, datetime]:
+    try:
+        return datetime.fromisoformat(value)
+    except ValueError:
+        return None
 
 
 def generate_pin() -> int:
