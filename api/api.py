@@ -3,9 +3,14 @@ from datetime import datetime
 from typing import Union, Tuple
 
 import flask
-from flask import request, Response, jsonify
+from flask import request, Response, jsonify, Blueprint
+from flask_restful import Resource
+from flask_swagger import swagger
+from flask_swagger_ui import get_swaggerui_blueprint
+from flask_restplus import Api
 
 from sql import get_all_tables, get_free_tables, insert_reservation
+
 
 DATE_FORMAT: str = '%Y-%m-%d %H:%M'
 
@@ -34,24 +39,40 @@ def generate_pin() -> int:
 
 if __name__ == '__main__':
     app = flask.Flask(__name__)
+    api = Api(version='1.0',
+              title='Restaurant Tischreservierung API',
+              description='Reserve tables at our establishment')
+    blueprint = Blueprint('api', __name__, url_prefix='/api')
+    api.init_app(blueprint)
     app.config["DEBUG"] = True
 
+    namespace = api.namespace()
 
-    @app.get('/api/v1/tables')
+
+    @api.get('/api/v1/tables')
     def tables():
+        """
+        Get all tables.
+        """
         return jsonify(get_all_tables())
 
 
-    @app.get('/api/v1/free-tables')
+    @api.get('/api/v1/free-tables')
     def free_tables():
+        """
+        Get free tables.
+        """
         date = get_request_date_or_error(request.args)
         if isinstance(date, Response):
             return date
         return jsonify(get_free_tables(date))
 
 
-    @app.post('/api/v1/table/reserve')
+    @api.post('/api/v1/table/reserve')
     def reserve_table():
+        """
+        Reserve a table.
+        """
         date = get_request_date_or_error(request.json)
         if not isinstance(date, datetime):
             return date
@@ -88,16 +109,32 @@ if __name__ == '__main__':
         return jsonify(result), 200
 
 
-    @app.get('/api/v1/coffee')
+    @api.route('/swagger')
+    def spec():
+        swag = swagger(app)
+        swag['info']['version'] = "0.1.0"
+        swag['info']['title'] = "Restaurant Reservations API"
+        return jsonify(swag)
+
+
+    @api.get('/api/v1/coffee')
     def coffee():
         error = {'error': 'i am a teapot'}
         return jsonify(error), 418
 
 
-    @app.get('/api/v1/tea')
+    @api.get('/api/v1/tea')
     def tea():
         error = {'response': 'yes'}
         return jsonify(error), 418
 
+
+    app.register_blueprint(get_swaggerui_blueprint(
+        base_url='/swagger-ui',
+        api_url='/swagger',
+        config={
+            'app_name': 'Restaurant Reservation API'
+        }
+    ), url_prefix='/swagger-ui')
 
     app.run()
